@@ -29,8 +29,10 @@ module.exports = function (React) {
     },
     render: function () {
       var props = this.props;
-      return React.DOM.div(null, props.children, props.hasMore && (props.loader || InfiniteScroll._defaultLoader));
-    },
+
+      return React.DOM.div({ className: 'infinite-scroll-container' }, props.children, props.hasMore && (props.loader || InfiniteScroll._defaultLoader));
+    
+},
     scrollListener: function () {
       var el = this.getDOMNode();
       var scrollTop = (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
