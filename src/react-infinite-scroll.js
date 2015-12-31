@@ -6,11 +6,24 @@ function topPosition(domElt) {
 }
 
 module.exports = function (React) {
+
   if (React.addons && React.addons.InfiniteScroll) {
     return React.addons.InfiniteScroll;
   }
   React.addons = React.addons || {};
   var InfiniteScroll = React.addons.InfiniteScroll = React.createClass({
+    /**
+     * Detects if page is framed
+     * @return {boolean}
+     */
+    _inIframe: function () {
+      try {
+        return window.self !== window.top;
+      } catch (e) {
+        return true;
+      }
+    },
+    _previousHeight: null,
     getDefaultProps: function () {
       return {
         pageStart: 0,
@@ -22,6 +35,7 @@ module.exports = function (React) {
     componentDidMount: function () {
       this.pageLoaded = this.props.pageStart;
       this.attachScrollListener();
+      window.addEventListener('message', this._receiveMessage);
     },
     componentDidUpdate: function () {
       this.pageLoaded = this.props.pageStart;
@@ -32,7 +46,23 @@ module.exports = function (React) {
 
       return React.DOM.div({ className: 'infinite-scroll-container' }, props.children, props.hasMore && (props.loader || InfiniteScroll._defaultLoader));
     
-},
+    },
+    _receiveMessage: function(e) {
+      try {
+        var data = (e.data) ? JSON.parse(e.data) : null;
+        if (data && data.scrollTop) {
+          var el = this.getDOMNode();
+          var pos = topPosition(el) + el.offsetHeight - data.scrollTop - data.innerHeight;
+          //console.log(pos +' '+Number(this.props.threshold)+' '+data.scrollTop+' '+data.innerHeight);
+          if (pos < Number(this.props.threshold) && this._previousHeight !== el.offsetHeight) {
+            this._previousHeight = el.offsetHeight;
+            this.props.loadMore(this.pageLoaded += 1);
+          }
+        }
+      } catch (err) {
+
+      }
+    },
     scrollListener: function () {
       var el = this.getDOMNode();
       var scrollTop = (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
@@ -44,7 +74,7 @@ module.exports = function (React) {
       }
     },
     attachScrollListener: function () {
-      if (!this.props.hasMore) {
+      if (!this.props.hasMore || this._inIframe()) {
         return;
       }
       window.addEventListener('scroll', this.scrollListener);
@@ -57,6 +87,7 @@ module.exports = function (React) {
     },
     componentWillUnmount: function () {
       this.detachScrollListener();
+      window.removeEventListener('message', this._receiveMessage);
     }
   });
   InfiniteScroll.setDefaultLoader = function (loader) {
