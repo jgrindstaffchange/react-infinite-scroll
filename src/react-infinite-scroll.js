@@ -51,7 +51,7 @@ module.exports = function (React, ReactDOM) {
       try {
         var data = (e.data) ? JSON.parse(e.data) : null;
         if (data && data.scrollTop) {
-          var el = this.getDOMNode();
+          var el = ReactDOM.findDOMNode(this);
           var pos = topPosition(el) + el.offsetHeight - data.scrollTop - data.innerHeight;
           //console.log(pos +' '+Number(this.props.threshold)+' '+data.scrollTop+' '+data.innerHeight);
           if (pos < Number(this.props.threshold) && this._previousHeight !== el.offsetHeight) {
